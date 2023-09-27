@@ -30,16 +30,21 @@
 <body>
     <h1>Competenze di Data Literacy</h1>
     
-    <input type="text" id="searchInput" placeholder="Cerca competenza..." onkeyup="searchTable()">
+    <input type="text" id="searchInput" placeholder="Inserisci una chiave di ricerca..." onkeyup="searchTable()">
+    
+    <select id="jobVacancyFilter" onchange="filterTable()">
+        <option value="">Tutte le job vacancy</option>
+        <!-- Opzioni per selezionare specifiche job vacancy verranno aggiunte qui -->
+    </select>
     
     <table id="competenzeTable">
         <thead>
             <tr>
-                <th>Numero progressivo competenza</th>
-                <th>Nome competenza</th>
-                <th>Livello</th>
-                <th>Descrizione</th>
-                <th>Cose fare per acquisirla</th>
+                <th>Job Vacancy</th>
+                <th>Competenza Data Literacy</th>
+                <th>Base</th>
+                <th>Intermedio</th>
+                <th>Avanzato</th>
             </tr>
         </thead>
         <tbody>
@@ -50,25 +55,51 @@
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script>
         $(document).ready(function () {
-            // Carica i dati dal file CSV
-            $.get("competenze.csv", function (data) {
-                // Dividi il file CSV in righe
-                var lines = data.split("\n");
+// Carica i dati dal file CSV
+$.get("competenze.csv", function (data) {
+    // Dividi il file CSV in righe
+    var lines = data.split("\n");
 
-                // Itera sulle righe del CSV (ignorando l'intestazione)
-                for (var i = 1; i < lines.length; i++) {
-                    var line = lines[i].split(";");
-                    var row = "<tr>";
-                    for (var j = 0; j < line.length; j++) {
-                        row += "<td>" + line[j] + "</td>";
-                    }
-                    row += "</tr>";
-                    $("#competenzeTable tbody").append(row);
-                }
-            });
+    // Oggetto per tenere traccia delle job vacancy uniche
+    var jobVacancyOptions = {};
+
+    // Popolare il filtro delle job vacancy
+    var jobVacancyFilter = document.getElementById("jobVacancyFilter");
+    for (var i = 1; i < lines.length; i++) {
+        var line = lines[i].split(";");
+        if (line.length > 0) {
+            // Rimuovi il simbolo '"' solo se è presente all'inizio o alla fine del valore
+            var jobVacancy = line[0].replace(/^"|"$/g, "");
+            jobVacancyOptions[jobVacancy] = true;
+        }
+    }
+
+    // Creare le opzioni del filtro basate sulle job vacancy uniche
+    for (var job in jobVacancyOptions) {
+        if (jobVacancyOptions.hasOwnProperty(job)) {
+            var option = document.createElement("option");
+            option.text = job;
+            option.value = job;
+            jobVacancyFilter.appendChild(option);
+        }
+    }
+
+    // Popolare la tabella
+    for (var i = 1; i < lines.length; i++) {
+        var line = lines[i].split(";");
+        var row = "<tr>";
+        for (var j = 0; j < line.length; j++) {
+            // Rimuovi il simbolo '"' solo se è presente all'inizio o alla fine del valore
+            var cellData = line[j].replace(/^"|"$/g, "");
+            row += "<td>" + cellData + "</td>";
+        }
+        row += "</tr>";
+        $("#competenzeTable tbody").append(row);
+    }
+});
         });
 
-        // Funzione per filtrare la tabella in base all'input dell'utente
+	// Funzione per filtrare la tabella in base all'input dell'utente
         function searchTable() {
             var input, filter, table, tr, td, i, j, txtValue;
             input = document.getElementById("searchInput");
@@ -92,6 +123,31 @@
                 }
             }
         }
+
+	// Funzione per filtrare la tabella in base alla selezione della job vacancy
+	function filterTable() {
+	    var filter, table, tr, td, i, txtValue;
+	    filter = document.getElementById("jobVacancyFilter").value.toUpperCase();
+	    table = document.getElementById("competenzeTable");
+	    tr = table.getElementsByTagName("tr");
+	    for (i = 0; i < tr.length; i++) {
+	        td = tr[i].getElementsByTagName("td")[0]; // La prima colonna contiene la job vacancy
+	        if (td) {
+	            txtValue = td.textContent || td.innerText;
+	            
+	            // Rimuovi il simbolo '"' solo se è presente all'inizio o alla fine del valore
+	            txtValue = txtValue.trim().replace(/^"|"$/g, "").toUpperCase();
+	            
+	            if (txtValue === filter || filter === "") {
+	                tr[i].style.display = "";
+	            } else {
+	                tr[i].style.display = "none";
+	            }
+	        }
+	    }
+	}
+
+
     </script>
 </body>
 </html>
