@@ -2,14 +2,41 @@
 <html>
 <head>
     <title>Competenze di Data Literacy</title>
-    <!-- Collega Bootstrap CSS -->
+    <!-- Aggiungi Bootstrap CSS -->
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <style>
+        /* Stile per le righe pari (background grigio) */
+        #competenzeTable tbody tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+
+        /* Stile per le righe dispari (nessun background) */
+        #competenzeTable tbody tr:nth-child(odd) {
+            background-color: transparent;
+        }
+
+        /* Aggiungi uno stile per l'intestazione fissata in alto */
+        #competenzeTable thead th {
+            position: sticky;
+            top: 0;
+            background-color: white; /* Imposta il colore di sfondo */
+        }
+
+        /* Stile per i filtri fissati in alto */
+        .filter-row {
+            position: sticky;
+            top: 0;
+            background-color: white;
+            z-index: 1; /* Imposta una z-index maggiore per sovrapporre l'intestazione della tabella */
+        }
+    </style>
 </head>
 <body>
     <div class="container mt-4">
         <h1 class="mb-4">Competenze di Data Literacy</h1>
 
-        <div class="row">
+        <!-- Filtri fissati in alto -->
+        <div class="row filter-row">
             <div class="col-md-6 mb-3">
                 <input type="text" class="form-control" id="searchInput" placeholder="Inserisci una chiave di ricerca..." onkeyup="searchTable()">
             </div>
@@ -21,23 +48,28 @@
             </div>
         </div>
 
-        <table id="competenzeTable" class="table table-bordered">
-            <thead>
-                <tr>
-                    <th>Job Vacancy</th>
-                    <th>Competenza Data Literacy</th>
-                    <th>Base</th>
-                    <th>Intermedio</th>
-                    <th>Avanzato</th>
-                </tr>
-            </thead>
-            <tbody>
-                <!-- I dati verranno caricati qui usando jQuery -->
-            </tbody>
-        </table>
+        <!-- Aggiungi un contenitore con uno stile di overflow per abilitare lo scroll -->
+        <div class="table-responsive">
+            <table class="table table-bordered" id="competenzeTable">
+                <thead>
+                    <tr>
+                        <th>Job Vacancy</th>
+                        <th>Competenza Data Literacy</th>
+                        <th>Base</th>
+                        <th>Intermedio</th>
+                        <th>Avanzato</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- I dati verranno caricati qui usando jQuery -->
+                </tbody>
+            </table>
+        </div>
     </div>
 
-    <!-- Collega Bootstrap JS e jQuery -->
+    
+    
+    <!-- Aggiungi Bootstrap JS e jQuery -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
 
@@ -48,41 +80,44 @@
                 // Dividi il file CSV in righe
                 var lines = data.split("\n");
 
-                // Oggetto per tenere traccia delle job vacancy uniche
-                var jobVacancyOptions = {};
+                // Oggetto per tenere traccia delle job vacancy e dei dati associati
+                var jobVacancyData = {};
 
-                // Popolare il filtro delle job vacancy
+                // Popolare il filtro delle job vacancy e raccogli dati associati
                 var jobVacancyFilter = document.getElementById("jobVacancyFilter");
                 for (var i = 1; i < lines.length; i++) {
                     var line = lines[i].split(";");
-                    if (line.length > 0) {
-                        // Rimuovi il simbolo '"' solo se è presente all'inizio o alla fine del valore
+                    if (line.length === 5) {
                         var jobVacancy = line[0].replace(/^"|"$/g, "");
-                        jobVacancyOptions[jobVacancy] = true;
+                        if (!jobVacancyData[jobVacancy]) {
+                            jobVacancyData[jobVacancy] = [];
+                            var option = document.createElement("option");
+                            option.text = jobVacancy;
+                            option.value = jobVacancy;
+                            jobVacancyFilter.appendChild(option);
+                        }
+                        jobVacancyData[jobVacancy].push(line);
                     }
                 }
 
-                // Creare le opzioni del filtro basate sulle job vacancy uniche
-                for (var job in jobVacancyOptions) {
-                    if (jobVacancyOptions.hasOwnProperty(job)) {
-                        var option = document.createElement("option");
-                        option.text = job;
-                        option.value = job;
-                        jobVacancyFilter.appendChild(option);
-                    }
-                }
+                // Mescola l'ordine delle job vacancy
+                var shuffledJobVacancies = shuffleArray(Object.keys(jobVacancyData));
 
-                // Popolare la tabella
-                for (var i = 1; i < lines.length; i++) {
-                    var line = lines[i].split(";");
-                    var row = "<tr>";
-                    for (var j = 0; j < line.length; j++) {
-                        // Rimuovi il simbolo '"' solo se è presente all'inizio o alla fine del valore
-                        var cellData = line[j].replace(/^"|"$/g, "");
-                        row += "<td>" + cellData + "</td>";
+                // Popolare la tabella con dati all'interno dei gruppi di job vacancy in ordine casuale
+                for (var i = 0; i < shuffledJobVacancies.length; i++) {
+                    var jobVacancy = shuffledJobVacancies[i];
+                    var groupData = jobVacancyData[jobVacancy];
+                    for (var j = 0; j < groupData.length; j++) {
+                        var line = groupData[j];
+                        var row = "<tr>";
+                        for (var k = 0; k < line.length; k++) {
+                            // Rimuovi il simbolo '"' solo se è presente all'inizio o alla fine del valore
+                            var cellData = line[k].replace(/^"|"$/g, "");
+                            row += "<td>" + cellData + "</td>";
+                        }
+                        row += "</tr>";
+                        $("#competenzeTable tbody").append(row);
                     }
-                    row += "</tr>";
-                    $("#competenzeTable tbody").append(row);
                 }
             });
         });
@@ -133,6 +168,25 @@
                     }
                 }
             }
+        }
+
+        // Funzione per mescolare un array in modo casuale (algoritmo di Fisher-Yates)
+        function shuffleArray(array) {
+            var currentIndex = array.length, randomIndex, temporaryValue;
+
+            // Finché ci sono elementi rimasti da mescolare...
+            while (currentIndex !== 0) {
+                // Scegli un elemento rimasto a caso...
+                randomIndex = Math.floor(Math.random() * currentIndex);
+                currentIndex--;
+
+                // E scambia con l'elemento corrente.
+                temporaryValue = array[currentIndex];
+                array[currentIndex] = array[randomIndex];
+                array[randomIndex] = temporaryValue;
+            }
+
+            return array;
         }
     </script>
 </body>
