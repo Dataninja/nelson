@@ -1,2 +1,0 @@
-# nelson
-esperimenti di nelson
